@@ -1,0 +1,133 @@
+
+# 1. load
+
+```{r}
+fhs.df <- read.csv('framingham.csv')
+fhs.df[ 1:10, 1:10 ]
+```
+
+## dim
+
+```{r}
+dim( fhs.df )
+```
+
+## variabiles 
+
+```{r}
+names( fhs.df )
+```
+
+## attached var
+
+```{r}
+attach( fhs.df )
+```
+
+# catagorical variables
+
+## diabetes
+
+```{r}
+is.diabetes <- ifelse( diabetes == 1, 1, 0 )
+is.diabetes
+```
+
+## sex
+
+```{r}
+is.female <- ifelse( male == 0, 1, 0 )
+is.female 
+```
+
+## smoking?
+
+```{r}
+is.somker <- ifelse( currentSmoker == 1, 1, 0 )
+is.smoker 
+```
+
+# age model 
+
+```{r}
+age.model <- lm ( heartRate ~ age )
+summary( age.model )
+anova( age.model )
+```
+
+## plot 
+
+```{r}
+plot( age, heartRate )
+```
+
+## try log(hr)
+
+```{r}
+log.hr <- log(heartRate)
+log.hr
+```
+
+```{r}
+plot( age, log.hr )
+```
+not much better :(
+
+# gender model 
+
+```{r}
+gender.model <- lm( heartRate ~ is.female )
+summary( gender.model )
+anova( gender.model )
+```
+
+```{r}
+plot <- (is.female, heartRate )
+```
+
+# bmi model 
+
+```{r}
+BMI.model <- lm( heartRate ~ BMI )
+summary(BMI.model)
+anova(BMI.model)
+```
+```{r}
+diabetes.model <- lm( heartRate ~ diabetes )
+summary(diabetes.model)
+anova(diabetes.model)
+```
+
+# glu. model
+
+```{r}
+glucose.model <- lm( heartRate ~ glucose )
+summary(glucose.model)
+anova( glucose.model)
+```
+```{r}
+cigar.model <- lm( heartRate ~ cigsPerDay )
+summary(cigar.model)
+anova(cigar.model)
+```
+# sysBP
+
+```{r}
+sysBP.model <- lm( heartRate  ~ sysBP )
+summary(sysBP.model)
+anova(sysBP.model)
+```
+# smoking
+```{r}
+smoking.model <- lm ( heartRate ~ is.smoker )
+
+```
+# chol
+
+```{r}
+chol.model <- lm( heartRate ~ totChol )
+summary(chol.model)
+anova(chol.model)
+```
+
+
