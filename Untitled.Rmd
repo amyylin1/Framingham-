@@ -1,0 +1,14 @@
+---
+title: "Framingham heart study"
+date: '2024-04-30'
+output: html_document
+---
+
+```{r}
+fhs <- read.csv('framingham.csv')
+```
+
+```{r}
+attach(fhs)
+```
+
