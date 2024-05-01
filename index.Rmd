@@ -1,0 +1,286 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# 1. Reading in the data
+
+```{r}
+fhs <- read.csv('framingham.csv')
+fhs[ 1:10, 1:16 ]
+```
+
+## dimension of the matrix
+
+```{r}
+dim( fhs )
+```
+
+The data frame is a 16 by 4240 matrix.
+
+There are 15 variables (columns), excluding the index.
+
+There are 4240 subjects.
+
+## variable names
+
+```{r}
+# what are the variable names
+names( fhs )
+```
+
+## attach dataset
+
+```{r}
+# link to dataset
+attach( fhs )
+```
+
+# 2. Model building
+
+We will start with a forward selection strategy first. If this does not lead to the model with the best goodness of fit, we will consider alternative model along the way.
+
+The variables we have are :
+
+      sex, age
+      
+      Education
+      
+      CurrentSmoker, cigsPerday, heartRate
+      
+      PrevalentStroke, prevalentHyp, BPMeds
+      
+      diabetes
+      
+      glucose, totChol, BMI
+      
+
+We will build a simple linear model for the our defined response variable, using only the explanatory variables (or functions of them):
+
+      Sex, age, BMI
+      
+
+Once we have a model in term of these variables, we will add other interactions
+
+## - response variable
+
+Blood pressure is an health measure of cardiovascular function. In general, high blood pressure indicates poor vascular health, and lower blood pressure indicates otherwise. The ideal blood pressure reading is less than 120/80 mmHg.
+
+General guidelines:
+
+Normal: less than 120/80 mmHg
+
+Elevated: 120/129 / \<80 mmHg
+
+Hypertension status 1: 130-139 / 80-90 mmHg
+
+Hypertension status 2: 140 or higher / 90 or higher mmHg
+
+we decide to make our response variable as the difference between of the systolic blood pressure and the diastolic blood pressure.
+
+When blood pressure is taken, systolic and diastolic blood pressures are measured.
+
+      1. Systolic pressure (the top number in the blood pressure reading) measures the pressure of the arteries when the heart push the oxygenated blood out into the circulatory system during the contraction phase.
+      
+      2. Dystolic pressure (the bottom number in the blood pressure reading) measures the pressure of the arteries in between contraction, when the heart is at the relaxation phase. 
+      
+
+```{r}
+# define the difference bet. systolic and dystolic pressure
+bpd = sysBP - diaBP 
+
+# create the log.bpd variable
+log.bpd = log(bpd)
+```
+
+```{r}
+# is.smoker equals to 1 if the the individual currently smokes, 0 otherwise.
+is.smoker <- ifelse( currentSmoker == 1, 1, 0 )
+#is.smoker 
+```
+
+# 2.1 What do we add first?
+
+We will add each of these explanatory variables: age, gender, and BMI to the null (intercept-only) model. Which model do you prefer and why? Address this in our report.
+
+## - add age
+
+Does age has to do with cardiovascular health?
+
+In theory, yes, because age is a risk factor for age-related cardiovascular declines.
+
+```{r}
+age.model <- lm ( log.bpd ~ age )
+summary( age.model )
+anova( age.model )
+```
+
+### plot
+
+```{r}
+plot( age, log.bpd, 
+      xlab = "Age", ylab = "Blood Pressure Difference (mmHg)" )
+```
+
+### plot log(response)
+
+```{r}
+plot( age, bpd, 
+      xlab = "Age", ylab = "Log(Blood Pressure Difference) (mmHg) " )
+```
+
+Address this in the report:
+
+Why do we choose the log transformed response variable vs the non log transformed response variable?
+
+## - add gender
+
+Does gender contribute to heart health?
+
+```{r}
+# is.female equals to 0 if the gender is female, 1 otherwise. 
+is.female <- ifelse( male == 1, 0, 1 )
+#is.female 
+```
+
+```{r}
+gender.model <- lm( log.bpd ~ is.female )
+summary( gender.model )
+anova( gender.model )
+```
+
+## - add bmi
+
+```{r}
+BMI.model <- lm( log.bpd ~ fhs$BMI )
+summary(BMI.model)
+anova(BMI.model)
+```
+
+The p-value is 2e-16.
+
+What does this p-value tell us ?
+
+```{r}
+plot(fhs$BMI, log.bpd)
+```
+
+# 2.2 producing residual diagnostic plots
+
+We will be looking at many residual diagnostic plots as we try to find a model that reasonably explains the data.
+
+## 1) age
+
+```{r}
+our.residual.plots <- function( model, 
+                                ylim = c( -0.75, 0.75)){
+      # cal. the residuals
+      res <- resid( model )
+      
+      # cal. the fitted values
+      fits <- fitted( model )
+
+      # produce a plot which has 3 rows by 2 columns
+      par( mfrow = c( 3, 2 ))
+      
+      # plot the residual versus the fitted values
+      plot( fits, 
+            res,
+            xlab = 'Fitted values',
+            ylab = 'Residuals', 
+            ylim = ylim, 
+            col = ifelse( is.female == 1, 'black', 'grey' ))
+      abline( h = 0, col = 'grey' )
+      
+      # produce a normal qq plot for the residuals
+      qqnorm( res, main = '', 
+              xlab = 'Normal quantiles', 
+              ylab = 'Residuals',
+              ylim = ylim )
+      qqline( res )
+      
+      # plot the residuals versus the height
+      plot( fhs$BMI, 
+            res, 
+            xlab = 'BMI', 
+            ylab = 'Redisuals', 
+            ylim = ylim, 
+            col = ifelse( is.female == 1, 'black', 'grey' ))
+      abline( h = 0, col = 'grey' )
+      
+      # plot the residuals vs. the age
+      plot( age, res, 
+            xlab = 'Age', 
+            ylab = 'Residuals', 
+            ylim = ylim, 
+            col = ifelse( is.female == 1, 'black', 'grey' ))
+      abline( h = 0, col = 'grey' )
+      
+      # plot the residuals vs. the gender
+      plot ( is.female, res, 
+             xlab = ' ', 
+             ylab = 'Residuals', 
+             ylim = ylim,
+             xaxt = 'n', 
+             xlim = c( -0.2, 1.2 ))
+      axis( side = 1, at = c( 0, 1 ), labels = c( 'Male', 'Female' ) )
+      abline( h = 0, col = 'grey' )
+      
+      ## plot the residuals vs. the smoking status
+      #
+      plot ( is.smoker, res,
+             xlab = '', 
+             ylab = 'Residuals', 
+             ylim = ylim, 
+             xaxt = 'n', 
+             xlim = c( -0.2, 1.2 ))
+      axis( side = 1, at = c( 0, 1 ), labels = c( 'Non-smoker', 'Smoker' ) )
+      abline( h = 0, col = 'grey' )
+}
+
+# produce the plot 
+our.residual.plots( age.model )
+```
+
+
+```{r}
+# produce the plot 
+our.residual.plots( age.model )
+```
+
+## 2) gender
+
+```{r}
+# produce the plot 
+our.residual.plots( gender.model )
+```
+
+What do you like about the fit of model, and what do you not like? 
+
+## 3) bmi
+
+```{r}
+# produce the plot 
+#our.residual.plots( BMI.model )
+```
+
+
+# 2.3. What do add next?
+
+```{r}
+# age and gender
+age.gender.model <- lm(log.bpd ~ age + is.female )
+summary(age.gender.model)
+anova(age.gender.model)
+our.residual.plots(age.gender.model)
+```
+
+```{r}
+# add bmi to gender
+bmi.gender.model <- lm(log.bpd ~ fhs$BMI + is.female )
+summary(bmi.gender.model)
+anova(bmi.gender.model)
+#our.residual.plots(bmi.gender.model)
+```
+
